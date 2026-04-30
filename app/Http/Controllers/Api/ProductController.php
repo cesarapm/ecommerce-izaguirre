@@ -8,6 +8,19 @@ use Illuminate\Http\Request;
 
 class ProductController extends Controller
 {
+    private function resolveCollectionFilter(?string $collection): ?string
+    {
+        if (!$collection) {
+            return null;
+        }
+
+        return match ($collection) {
+            'cosmologia-maya', 'ancestral', 'Coleccion Cosmologia Maya' => 'Coleccion Cosmologia Maya',
+            'maya-contemporanea', 'contemporaneo', 'Coleccion Maya Contemporanea' => 'Coleccion Maya Contemporanea',
+            default => $collection,
+        };
+    }
+
     private function resolveProductImage($product): ?string
     {
         if ($product->image) {
@@ -29,6 +42,7 @@ class ProductController extends Controller
             'price' => $product->price,
             'stock' => $product->stock,
             'category' => $product->category,
+            'collection' => $product->collection,
             'image' => $this->resolveProductImage($product),
             'gallery' => $product->getGalleryUrls(),
             'is_active' => $product->is_active,
@@ -45,10 +59,15 @@ class ProductController extends Controller
     public function index(Request $request)
     {
         $query = Product::where('is_active', true);
+        $perPage = 8;
 
         // Filtrar por categoría
         if ($request->has('category') && $request->category !== 'Todas') {
             $query->where('category', $request->category);
+        }
+
+        if ($request->filled('collection') && $request->collection !== 'Todas') {
+            $query->where('collection', $this->resolveCollectionFilter($request->collection));
         }
 
         // Buscar por nombre o descripción
@@ -75,7 +94,10 @@ class ProductController extends Controller
             $query->orderBy('created_at', 'desc');
         }
 
-        $products = $query->get()->map(fn ($product) => $this->serializeProduct($product));
+        $products = $query
+            ->paginate($perPage)
+            ->through(fn ($product) => $this->serializeProduct($product))
+            ->withQueryString();
 
         return response()->json($products);
     }

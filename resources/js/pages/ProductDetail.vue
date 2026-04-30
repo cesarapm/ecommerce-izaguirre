@@ -55,6 +55,7 @@
           <div class="detail-header">
             <div class="detail-badges">
               <span class="detail-kicker">{{ formatCategory(product.category) }}</span>
+              <span v-if="product.collection" class="detail-collection">{{ formatCollection(product.collection) }}</span>
               <span v-if="product.codigo" class="detail-code">{{ product.codigo }}</span>
             </div>
 
@@ -195,6 +196,11 @@ const categoryEmojis = {
   pulsera: '⟡'
 }
 
+const collectionValueMap = {
+  'Coleccion Cosmologia Maya': 'Cosmología Maya',
+  'Coleccion Maya Contemporanea': 'Maya Contemporánea'
+}
+
 const formatCategory = (category) => {
   if (!category) {
     return 'Pieza artesanal'
@@ -203,6 +209,10 @@ const formatCategory = (category) => {
   return category
     .replace(/[-_]/g, ' ')
     .replace(/\b\w/g, (letter) => letter.toUpperCase())
+}
+
+const formatCollection = (collection) => {
+  return collectionValueMap[collection] || collection || 'Colección artesanal'
 }
 
 const getProductEmoji = (category) => {
@@ -466,6 +476,7 @@ const buyNow = () => {
 }
 
 .detail-kicker,
+.detail-collection,
 .detail-code,
 .featured-pill {
   display: inline-flex;
@@ -480,6 +491,11 @@ const buyNow = () => {
 .detail-kicker {
   background: rgba(184, 151, 120, 0.12);
   color: #8c745f;
+}
+
+.detail-collection {
+  background: rgba(140, 116, 95, 0.1);
+  color: #6b5b47;
 }
 
 .detail-code {

@@ -17,6 +17,7 @@ class Product extends Model
         'category',
         'image',
         'galeria_imagenes',
+        'collection',
         'is_active',
         'material',
         'peso',

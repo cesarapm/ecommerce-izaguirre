@@ -12,12 +12,26 @@
       <div class="filters-copy">
         <span class="filters-label">Filtrar catálogo</span>
         <p class="filters-summary">
-          {{ filteredProducts.length }} {{ filteredProducts.length === 1 ? 'pieza disponible' : 'piezas disponibles' }}
+          {{ totalProducts }} {{ totalProducts === 1 ? 'pieza disponible' : 'piezas disponibles' }}
         </p>
       </div>
 
       <v-row class="filters-grid" align="center">
-        <v-col cols="12" md="4">
+        <v-col cols="12" md="3">
+          <v-select
+            v-model="selectedCollection"
+            :items="collectionOptions"
+            label="Colección"
+            variant="outlined"
+            density="comfortable"
+            hide-details
+            item-title="title"
+            item-value="value"
+            prepend-inner-icon="mdi-diamond-stone"
+            class="filter-field"
+          ></v-select>
+        </v-col>
+        <v-col cols="12" md="3">
           <v-select
             v-model="selectedCategory"
             :items="categories"
@@ -31,7 +45,7 @@
             class="filter-field"
           ></v-select>
         </v-col>
-        <v-col cols="12" md="4">
+        <v-col cols="12" md="3">
           <v-select
             v-model="sortBy"
             :items="sortOptions"
@@ -43,7 +57,7 @@
             class="filter-field"
           ></v-select>
         </v-col>
-        <v-col cols="12" md="4">
+        <v-col cols="12" md="3">
           <v-text-field
             v-model="search"
             label="Buscar por nombre o descripción"
@@ -84,6 +98,7 @@
             </div>
           </div>
           <v-card-text class="product-card__content">
+            <p v-if="product.collection" class="product-card__collection">{{ formatCollection(product.collection) }}</p>
             <h3 class="product-card__title">{{ product.name }}</h3>
             <p class="product-card__description">{{ truncateDescription(product.description) }}</p>
             <div class="product-card__meta">
@@ -124,6 +139,16 @@
       </v-col>
     </v-row>
 
+    <div v-if="!loading && totalPages > 1 && filteredProducts.length > 0" class="pagination-shell">
+      <v-pagination
+        v-model="currentPage"
+        :length="totalPages"
+        :total-visible="$vuetify.display.smAndDown ? 4 : 7"
+        rounded="circle"
+        active-color="primary"
+      />
+    </div>
+
     <!-- Snackbar -->
     <v-snackbar v-model="snackbar" :timeout="2000" color="success">
       <v-icon start>mdi-check-circle</v-icon>
@@ -134,16 +159,47 @@
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { useCart } from '../composables/useCart';
 
+const route = useRoute();
 const router = useRouter();
 
+const collectionValueMap = {
+  'Coleccion Cosmologia Maya': 'Cosmología Maya',
+  'Coleccion Maya Contemporanea': 'Maya Contemporánea',
+};
+
+const collectionAliasMap = {
+  'cosmologia-maya': 'Coleccion Cosmologia Maya',
+  'maya-contemporanea': 'Coleccion Maya Contemporanea',
+  'ancestral': 'Coleccion Cosmologia Maya',
+  'contemporaneo': 'Coleccion Maya Contemporanea',
+};
+
+const normalizeCollection = (value) => {
+  if (!value) {
+    return 'Todas';
+  }
+
+  return collectionAliasMap[value] ?? (collectionValueMap[value] ? value : 'Todas');
+};
+
+const selectedCollection = ref(normalizeCollection(route.query.collection));
 const selectedCategory = ref('Todas');
 const sortBy = ref('name');
 const search = ref('');
 const products = ref([]);
 const loading = ref(false);
+const currentPage = ref(1);
+const totalPages = ref(1);
+const totalProducts = ref(0);
+
+const collectionOptions = [
+  { title: 'Todas las colecciones', value: 'Todas' },
+  { title: 'Cosmología Maya', value: 'Coleccion Cosmologia Maya' },
+  { title: 'Maya Contemporánea', value: 'Coleccion Maya Contemporanea' },
+];
 
 const categories = [
   { title: 'Todas las piezas', value: 'Todas' },
@@ -183,6 +239,10 @@ const fetchProducts = async () => {
       params.append('category', selectedCategory.value);
     }
 
+    if (selectedCollection.value && selectedCollection.value !== 'Todas') {
+      params.append('collection', selectedCollection.value);
+    }
+
     if (search.value) {
       params.append('search', search.value);
     }
@@ -191,11 +251,17 @@ const fetchProducts = async () => {
       params.append('sort', sortBy.value);
     }
 
+    params.append('page', currentPage.value);
+
 
     const response = await fetch(`/api/products?${params}`);
 
-    // console.log('API Response:', response);
-    products.value = await response.json();
+    const payload = await response.json();
+
+    products.value = payload.data ?? [];
+    currentPage.value = payload.current_page ?? 1;
+    totalPages.value = payload.last_page ?? 1;
+    totalProducts.value = payload.total ?? products.value.length;
 
 
   } catch (error) {
@@ -209,7 +275,24 @@ onMounted(() => {
   fetchProducts();
 });
 
-watch([selectedCategory, sortBy, search], () => {
+watch(() => route.query.collection, (value) => {
+  const normalizedCollection = normalizeCollection(value);
+
+  if (selectedCollection.value !== normalizedCollection) {
+    selectedCollection.value = normalizedCollection;
+  }
+});
+
+watch([selectedCollection, selectedCategory, sortBy, search], () => {
+  if (currentPage.value !== 1) {
+    currentPage.value = 1;
+    return;
+  }
+
+  fetchProducts();
+});
+
+watch(currentPage, () => {
   fetchProducts();
 });
 
@@ -238,6 +321,10 @@ const formatCategory = (category) => {
   return category || 'Pieza artesanal';
 };
 
+const formatCollection = (collection) => {
+  return collectionValueMap[collection] || collection || 'Colección artesanal';
+};
+
 const truncateDescription = (description) => {
   if (!description) {
     return 'Una pieza diseñada para destacar el detalle, la textura y la memoria de su origen.';
@@ -256,6 +343,12 @@ const truncateDescription = (description) => {
 .catalog-hero {
   max-width: 860px;
   margin-bottom: 2rem;
+}
+
+.pagination-shell {
+  display: flex;
+  justify-content: center;
+  margin-top: 2rem;
 }
 
 .catalog-kicker,
@@ -407,6 +500,14 @@ const truncateDescription = (description) => {
   font-size: 1.2rem;
   color: #5d4a38;
   margin-bottom: 0.65rem;
+}
+
+.product-card__collection {
+  margin-bottom: 0.45rem;
+  color: #8c745f;
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .product-card__description {

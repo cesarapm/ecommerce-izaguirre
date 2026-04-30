@@ -79,6 +79,9 @@ class ProductResource extends Resource
                         'Coleccion Cosmologia Maya' => 'Cosmología Maya',
                         'Coleccion Maya Contemporanea' => 'Maya Contemporánea'
                     ])
+
+
+                    
                     ->required()
                     ->native(false),
                 Forms\Components\TextInput::make('material')
@@ -154,7 +157,7 @@ class ProductResource extends Resource
                         'Collar' => 'success',
                         'Pulsera' => 'warning',
                         'Arete' => 'info',
-                        'Arracada' => 'secondary',
+                        'Arracada' => 'primary',
                         'Dije' => 'primary',
                         'Glifo' => 'danger',
                         'Mandala' => 'warning',
@@ -172,7 +175,7 @@ class ProductResource extends Resource
                     })
                     ->color(fn(string $state): string => match ($state) {
                         'Coleccion Cosmologia Maya' => 'primary',
-                        'Coleccion Maya Contemporanea' => 'secondary',
+                        'Coleccion Maya Contemporanea' => 'warning',
                         default => 'gray',
                     })
                     ->searchable()

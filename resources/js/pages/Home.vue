@@ -161,16 +161,28 @@
         </v-row>
         
         <v-row>
-          <v-col v-for="collection in collections" :key="collection.id" cols="12" md="4" class="mb-8">
+          <v-col v-for="collection in collections" :key="collection.id" cols="12" md="6" class="mb-8">
             <div class="collection-card" data-aos="fade-up" :data-aos-delay="collection.id * 100">
               <div class="collection-image">
                 <div class="collection-artwork" :class="collection.slug">
                   <span class="collection-kicker">{{ collection.kicker }}</span>
+                  <div class="collection-constellation" aria-hidden="true">
+                    <span class="collection-dot"></span>
+                    <span class="collection-dot"></span>
+                    <span class="collection-dot"></span>
+                    <span class="collection-line"></span>
+                  </div>
                   <div class="collection-mark">{{ collection.mark }}</div>
+                  <div class="collection-seal" aria-hidden="true">{{ collection.mark }}</div>
                   <span class="collection-motif">{{ collection.motif }}</span>
+                  <div class="collection-glyph-row" aria-hidden="true">
+                    <span>{{ collection.mark }}</span>
+                    <span>✦</span>
+                    <span>◌</span>
+                  </div>
                 </div>
                 <div class="collection-overlay">
-                  <v-btn class="explore-btn" variant="outlined" @click="exploreCollection(collection.slug)">
+                  <v-btn class="explore-btn" variant="outlined" @click="exploreCollection(collection.value)">
                     Explorar
                   </v-btn>
                 </div>
@@ -225,30 +237,23 @@ const heroBackdropStyle = {
 const collections = ref([
   {
     id: 1,
-    name: 'Ancestral',
-    description: 'Símbolos prehispánicos en diseños contemporáneos',
-    slug: 'ancestral',
+    name: 'Cosmología Maya',
+    description: 'Símbolos sagrados y geometrías mayas llevadas a piezas con presencia ceremonial.',
+    slug: 'cosmologia-maya',
+    value: 'Coleccion Cosmologia Maya',
     kicker: 'Origen sagrado',
     mark: '⟡',
     motif: 'Códices, memoria y fuerza'
   },
   {
     id: 2,
-    name: 'Contemporáneo', 
-    description: 'Diseños modernos con alma mexicana',
-    slug: 'contemporaneo',
+    name: 'Maya Contemporánea', 
+    description: 'Una lectura actual del imaginario maya con líneas limpias y carácter urbano.',
+    slug: 'maya-contemporanea',
+    value: 'Coleccion Maya Contemporanea',
     kicker: 'Presencia actual',
     mark: '◌',
     motif: 'Líneas puras, pulso urbano'
-  },
-  {
-    id: 3,
-    name: 'Artesanal',
-    description: 'Piezas únicas hechas completamente a mano',
-    slug: 'artesanal',
-    kicker: 'Hecho a mano',
-    mark: '✦',
-    motif: 'Textura, oficio y detalle'
   }
 ])
 
@@ -261,8 +266,8 @@ const scrollToCollection = () => {
   })
 }
 
-const exploreCollection = (slug) => {
-  router.push(`/productos?collection=${slug}`)
+const exploreCollection = (collection) => {
+  router.push({ path: '/productos', query: { collection } })
 }
 
 const viewProduct = (id) => {
@@ -549,7 +554,7 @@ onMounted(() => {
   align-items: center;
   justify-content: center;
   padding: 1.25rem;
-  background: linear-gradient(180deg, #f7f2ed 0%, #efe6dd 100%);
+
 }
 
 .product-photo {
@@ -560,7 +565,7 @@ onMounted(() => {
   display: block;
   border-radius: 18px;
   box-shadow: 0 18px 36px rgba(107, 91, 71, 0.16);
-  background: #f9f5f1;
+
 }
 
 .placeholder-product {
@@ -1089,29 +1094,87 @@ onMounted(() => {
   opacity: 0.8;
 }
 
-.collection-artwork.ancestral {
+.collection-artwork.cosmologia-maya {
   background:
     linear-gradient(150deg, rgba(255, 248, 238, 0.18), rgba(255, 248, 238, 0) 45%),
     linear-gradient(135deg, #ccb39a 0%, #b78e69 52%, #8b664b 100%);
 }
 
-.collection-artwork.contemporaneo {
+.collection-artwork.maya-contemporanea {
   background:
     linear-gradient(150deg, rgba(255, 249, 243, 0.18), rgba(255, 249, 243, 0) 45%),
     linear-gradient(135deg, #d8c7ba 0%, #b9967d 45%, #8b6f62 100%);
 }
 
-.collection-artwork.artesanal {
-  background:
-    linear-gradient(150deg, rgba(255, 251, 246, 0.18), rgba(255, 251, 246, 0) 45%),
-    linear-gradient(135deg, #d9c1a8 0%, #bd9874 50%, #927057 100%);
-}
-
 .collection-kicker,
+.collection-constellation,
 .collection-mark,
-.collection-motif {
+.collection-motif,
+.collection-glyph-row,
+.collection-seal {
   position: relative;
   z-index: 1;
+}
+
+.collection-constellation {
+  position: absolute;
+  top: 4.8rem;
+  right: 1.75rem;
+  width: 7rem;
+  height: 7rem;
+  opacity: 0.72;
+}
+
+.collection-dot {
+  position: absolute;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 999px;
+  background: rgba(255, 248, 240, 0.88);
+  box-shadow: 0 0 18px rgba(255, 248, 240, 0.5);
+}
+
+.collection-dot:nth-child(1) {
+  top: 0.4rem;
+  right: 1.2rem;
+}
+
+.collection-dot:nth-child(2) {
+  top: 2.4rem;
+  right: 3.4rem;
+}
+
+.collection-dot:nth-child(3) {
+  top: 4.8rem;
+  right: 0.6rem;
+}
+
+.collection-line {
+  position: absolute;
+  inset: 0;
+}
+
+.collection-line::before,
+.collection-line::after {
+  content: '';
+  position: absolute;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(255, 248, 240, 0), rgba(255, 248, 240, 0.72), rgba(255, 248, 240, 0));
+  transform-origin: left center;
+}
+
+.collection-line::before {
+  top: 1.3rem;
+  right: 1.4rem;
+  width: 3.2rem;
+  transform: rotate(138deg);
+}
+
+.collection-line::after {
+  top: 4rem;
+  right: 1rem;
+  width: 3.6rem;
+  transform: rotate(-36deg);
 }
 
 .collection-kicker {
@@ -1136,11 +1199,41 @@ onMounted(() => {
   text-shadow: 0 16px 28px rgba(88, 62, 39, 0.14);
 }
 
+.collection-seal {
+  position: absolute;
+  left: 1.5rem;
+  bottom: 1.35rem;
+  width: 4.8rem;
+  height: 4.8rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 248, 240, 0.22);
+  background: rgba(255, 248, 240, 0.1);
+  color: rgba(255, 250, 244, 0.46);
+  font-size: 2rem;
+  backdrop-filter: blur(6px);
+}
+
 .collection-motif {
   max-width: 12rem;
   font-size: 1rem;
   line-height: 1.45;
   color: rgba(255, 250, 244, 0.86);
+}
+
+.collection-glyph-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.45rem 0.75rem;
+  border-radius: 999px;
+  background: rgba(255, 248, 240, 0.14);
+  border: 1px solid rgba(255, 248, 240, 0.18);
+  color: rgba(255, 250, 244, 0.9);
+  font-size: 0.88rem;
+  backdrop-filter: blur(6px);
 }
 
 .collection-card:hover .collection-image .collection-artwork {
@@ -1308,6 +1401,19 @@ onMounted(() => {
   
   .collection-image {
     height: 250px;
+  }
+
+  .collection-constellation {
+    top: 4rem;
+    right: 1rem;
+    transform: scale(0.84);
+    transform-origin: top right;
+  }
+
+  .collection-seal {
+    width: 4rem;
+    height: 4rem;
+    bottom: 1rem;
   }
   
   .essence-card, .mvv-card {
