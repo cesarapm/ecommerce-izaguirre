@@ -125,21 +125,21 @@
         <v-col cols="12" md="10">
           <div class="values-grid">
             <div class="value-card" data-aos="fade-up">
-              <div class="value-icon">✨</div>
-              <h4>Artesanal</h4>
-              <p>Cada pieza es única, hecha a mano con técnicas tradicionales mexicanas.</p>
+              <div class="value-icon">🌿</div>
+              <h4>Sostenible</h4>
+              <p>Minería de plata responsable sostenida</p>
             </div>
             
             <div class="value-card" data-aos="fade-up" data-aos-delay="200">
-              <div class="value-icon">🌿</div>
-              <h4>Sostenible</h4>
-              <p>Materiales responsables y procesos que respetan el medio ambiente.</p>
+              <div class="value-icon">💎</div>
+              <h4>Calidad</h4>
+              <p>Cuidamos de todos los detalles desde el diseño hasta la fabricación</p>
             </div>
             
             <div class="value-card" data-aos="fade-up" data-aos-delay="400">
-              <div class="value-icon">💎</div>
-              <h4>Calidad</h4>
-              <p>Metales nobles y gemas seleccionadas para crear piezas duraderas.</p>
+              <div class="value-icon">✨</div>
+              <h4>Artesanal</h4>
+              <p>Piezas con Alma hechas por manos Mexicanas</p>
             </div>
           </div>
         </v-col>

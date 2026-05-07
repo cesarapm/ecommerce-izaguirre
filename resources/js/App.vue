@@ -7,12 +7,13 @@
       height="auto"
       class="py-0 main-navbar"
     >
-      <v-container class="d-flex align-center">
+      <v-container class="navbar-container">
         <v-app-bar-title class="pa-0">
           <router-link to="/" class="brand-logo text-decoration-none">
             <div class="brand-lockup">
-              <!-- <span class="brand-mark">IQ</span> -->
-               <img :src="logo" alt="IzaguirreQu Logo" class="brand-mark" />
+              <div class="brand-mark">
+                <img :src="logo" alt="IzaguirreQu Logo" />
+              </div>
               <div class="brand-copy">
                 <span class="brand-wordmark">IzaguirreQu</span>
                 <span class="brand-note">joyeria artesanal mexicana</span>
@@ -156,9 +157,9 @@
           <v-col cols="12" md="4" class="mb-6 mb-md-0">
             <div class="footer-brand mb-4">
               <div class="footer-brand-block">
-                <!-- <span class="footer-mark">IQ</span> -->
-
-                 <img :src="logo" alt="IzaguirreQu Logo" class="footer-mark" />
+                <div class="footer-mark">
+                  <img :src="logo" alt="IzaguirreQu Logo" />
+                </div>
                 <div class="footer-brand-copy">
                   <strong>IzaguirreQu</strong>
                   <span>hecho con detalle y calma</span>
@@ -333,6 +334,7 @@ header {
   display: flex;
   align-items: center;
   color: #6b5b47;
+
 }
 
 /* Navbar hide animation */
@@ -343,6 +345,12 @@ header {
   box-shadow: 0 10px 35px rgba(140, 116, 95, 0.08);
   transition: transform 0.3s ease-in-out !important;
   will-change: transform;
+}
+
+.navbar-container {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
 }
 
 .main-navbar.hidden {
@@ -370,12 +378,20 @@ header {
   align-items: center;
   justify-content: center;
   border-radius: 10%;
- 
   margin: auto;
   color: #fffaf4;
   font-size: 1rem;
   letter-spacing: 0.12em;
   box-shadow: 0 8px 20px rgba(239, 213, 190, 0.18);
+  object-fit: contain;
+  overflow: hidden;
+}
+
+.brand-mark img,
+.footer-mark img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 
 .brand-copy,
@@ -412,15 +428,48 @@ header {
   }
 }
 @media (max-width: 600px) {
-
   .brand-lockup {
-    gap: 10px;
+    gap: 8px;
   }
 
   .brand-mark,
   .footer-mark {
-    width: 40px;
-    height: 40px;
+    width: 42px;
+    height: 42px;
+    min-width: 42px;
+    min-height: 42px;
+    flex-shrink: 0;
+  }
+
+  .brand-wordmark {
+    font-size: 1.05rem;
+  }
+
+  .brand-note {
+    font-size: 0.58rem;
+  }
+
+  .v-toolbar__content {
+    padding: 8px 16px !important;
+  }
+
+  .navbar-container {
+    flex-wrap: nowrap !important;
+  }
+
+  .v-app-bar-title {
+    flex: 0 1 auto !important;
+    max-width: calc(100% - 60px) !important;
+    overflow: hidden;
+  }
+
+  .brand-logo {
+    display: block;
+    width: 100%;
+  }
+
+  .nav-links {
+    display: none !important;
   }
 }
 
