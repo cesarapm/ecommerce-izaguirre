@@ -5,8 +5,8 @@ import vue from '@vitejs/plugin-vue';
 export default defineConfig(({ mode }) => {
     const env = loadEnv(mode, process.cwd(), '');
     const port = Number(env.VITE_PORT || 5173);
-    const hmrHost = env.VITE_HMR_HOST || 'localhost';
-    const hmrProtocol = env.VITE_HMR_PROTOCOL || (hmrHost === 'localhost' ? 'ws' : 'wss');
+    const hmrHost = env.VITE_HMR_HOST || '192.168.1.50';
+    const hmrProtocol = env.VITE_HMR_PROTOCOL || (hmrHost === '192.168.1.50' ? 'ws' : 'wss');
     const hmrClientPort = Number(env.VITE_HMR_CLIENT_PORT || (hmrProtocol === 'wss' ? 443 : port));
 
     return {
@@ -22,7 +22,7 @@ export default defineConfig(({ mode }) => {
             port,
             strictPort: true,
             cors: true,
-            allowedHosts: hmrHost === 'localhost' ? [] : [hmrHost],
+            allowedHosts: hmrHost === '192.168.1.50' ? [] : [hmrHost],
             origin: env.VITE_DEV_SERVER_URL || undefined,
             hmr: {
                 host: hmrHost,

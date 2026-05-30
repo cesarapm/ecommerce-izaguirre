@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Customer;
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Services\MercadoPagoConfig;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
@@ -243,14 +244,14 @@ class PedidoController extends Controller
 
     private function crearPreferenciaPago(Order $order): array
     {
-        $accessToken = config('services.mercadopago.access_token');
+        $accessToken = MercadoPagoConfig::getAccessToken();
 
         if (!$accessToken) {
             return ['error' => 'Mercado Pago no está configurado'];
         }
 
         $frontendUrl = rtrim(config('app.frontend_url', config('app.url')), '/');
-        $notificationUrl = config('services.mercadopago.notification_url') ?: url('/api/mercado-pago/webhook');
+        $notificationUrl = MercadoPagoConfig::getNotificationUrl() ?: url('/api/mercado-pago/webhook');
 
         $backUrls = [
             'success' => $frontendUrl . '/checkout/exito',

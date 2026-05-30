@@ -7,6 +7,7 @@ use App\Mail\OrdenClienteAprobada;
 use App\Mail\OrdenAprobada;
 use App\Models\Order;
 use App\Models\Pay;
+use App\Services\MercadoPagoConfig;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -37,7 +38,7 @@ class WebhookController extends Controller
 
     protected function validateWebhookSignature(Request $request): bool
     {
-        $secret = config('services.mercadopago.webhook_secret');
+        $secret = MercadoPagoConfig::getWebhookSecret();
 
         if (!$secret) {
             return true;
@@ -74,7 +75,7 @@ class WebhookController extends Controller
 
     protected function syncMerchantOrder(string $merchantOrderId): void
     {
-        $accessToken = config('services.mercadopago.access_token');
+        $accessToken = MercadoPagoConfig::getAccessToken();
 
         if (!$accessToken) {
             Log::warning('Mercado Pago no configurado para merchant order');
@@ -102,7 +103,7 @@ class WebhookController extends Controller
 
     protected function syncPayment(string $paymentId): void
     {
-        $accessToken = config('services.mercadopago.access_token');
+        $accessToken = MercadoPagoConfig::getAccessToken();
 
         if (!$accessToken) {
             Log::warning('Mercado Pago no configurado para sincronizar pagos');
