@@ -20,6 +20,16 @@ class WebhookController extends Controller
         Log::info('Webhook de Mercado Pago recibido', $request->all());
 
         if (!$this->validateWebhookSignature($request)) {
+            Log::error('Validación de firma de webhook fallida', [
+                'headers' => [
+                    'x-signature' => $request->header('x-signature') ? '***' : 'NO PRESENTE',
+                    'x-request-id' => $request->header('x-request-id'),
+                ],
+                'type' => $request->input('type'),
+                'topic' => $request->input('topic'),
+                'id' => $request->input('id'),
+                'data_id' => $request->input('data.id'),
+            ]);
             return response()->json(['success' => false, 'message' => 'Firma inválida'], 401);
         }
 
@@ -40,7 +50,9 @@ class WebhookController extends Controller
     {
         $secret = MercadoPagoConfig::getWebhookSecret();
 
+        // En desarrollo sin secret: permitir todos los webhooks (NO SEGURO)
         if (!$secret) {
+            Log::warning('⚠️ Webhook validado sin verificar firma - MERCADO_PAGO_WEBHOOK_SECRET no configurado');
             return true;
         }
 
@@ -48,6 +60,10 @@ class WebhookController extends Controller
         $xRequestId = $request->header('x-request-id');
 
         if (!$xSignature || !$xRequestId) {
+            Log::warning('Headers de validación ausentes en webhook', [
+                'has_x_signature' => (bool) $xSignature,
+                'has_x_request_id' => (bool) $xRequestId,
+            ]);
             return false;
         }
 
@@ -78,23 +94,35 @@ class WebhookController extends Controller
         $accessToken = MercadoPagoConfig::getAccessToken();
 
         if (!$accessToken) {
-            Log::warning('Mercado Pago no configurado para merchant order');
+            Log::warning('⚠️ Webhook merchant_order recibido pero Mercado Pago no configurado', [
+                'merchant_order_id' => $merchantOrderId,
+                'tip' => 'Configura MERCADO_PAGO_ACCESS_TOKEN en tu .env o en Filament > Settings > Mercado Pago',
+            ]);
             return;
         }
+
+        Log::info('Sincronizando merchant_order de Mercado Pago', ['merchant_order_id' => $merchantOrderId]);
 
         $response = Http::withToken($accessToken)
             ->acceptJson()
             ->get("https://api.mercadopago.com/merchant_orders/{$merchantOrderId}");
 
         if (!$response->successful()) {
-            Log::error('No se pudo consultar merchant order', [
+            Log::error('No se pudo consultar merchant_order de Mercado Pago', [
                 'merchant_order_id' => $merchantOrderId,
+                'status' => $response->status(),
                 'response' => $response->json(),
             ]);
             return;
         }
 
-        foreach ($response->json('payments', []) as $payment) {
+        $payments = $response->json('payments', []);
+        Log::info('Merchant order consultada', [
+            'merchant_order_id' => $merchantOrderId,
+            'payment_count' => count($payments),
+        ]);
+
+        foreach ($payments as $payment) {
             if (!empty($payment['id'])) {
                 $this->syncPayment((string) $payment['id']);
             }
@@ -106,9 +134,14 @@ class WebhookController extends Controller
         $accessToken = MercadoPagoConfig::getAccessToken();
 
         if (!$accessToken) {
-            Log::warning('Mercado Pago no configurado para sincronizar pagos');
+            Log::warning('⚠️ Webhook de pago recibido pero Mercado Pago no configurado', [
+                'payment_id' => $paymentId,
+                'tip' => 'Configura MERCADO_PAGO_ACCESS_TOKEN en tu .env o en Filament > Settings > Mercado Pago',
+            ]);
             return;
         }
+
+        Log::info('Consultando estado de pago en Mercado Pago', ['payment_id' => $paymentId]);
 
         $response = Http::withToken($accessToken)
             ->acceptJson()
@@ -117,18 +150,23 @@ class WebhookController extends Controller
         if (!$response->successful()) {
             Log::error('No se pudo consultar el pago en Mercado Pago', [
                 'payment_id' => $paymentId,
+                'status' => $response->status(),
                 'response' => $response->json(),
             ]);
             return;
         }
 
         $payment = $response->json();
-        $order = Order::find($payment['external_reference'] ?? null);
+        $externalReference = $payment['external_reference'] ?? null;
+        $order = Order::find($externalReference);
 
         if (!$order) {
-            Log::warning('Pago recibido sin orden asociada', [
+            Log::warning('⚠️ Pago recibido sin orden asociada', [
                 'payment_id' => $paymentId,
-                'external_reference' => $payment['external_reference'] ?? null,
+                'external_reference' => $externalReference,
+                'payment_status' => $payment['status'] ?? null,
+                'payment_amount' => $payment['transaction_amount'] ?? null,
+                'tip' => 'Verifica que la orden exista en tu base de datos y que external_reference coincida con el order.id',
             ]);
             return;
         }
@@ -167,7 +205,19 @@ class WebhookController extends Controller
             'metodo_pago' => 'mercado_pago',
         ]);
 
+        Log::info('✅ Pago sincronizado correctamente', [
+            'payment_id' => $paymentId,
+            'order_id' => $order->id,
+            'order_status' => $order->status,
+            'payment_status' => $currentStatus,
+            'amount' => $payment['transaction_amount'] ?? 0,
+        ]);
+
         if ($currentStatus === 'approved' && $previousStatus !== 'approved') {
+            Log::info('🎉 Pago aprobado - Enviando notificaciones', [
+                'payment_id' => $paymentId,
+                'order_id' => $order->id,
+            ]);
             $this->sendApprovedOrderMail($order->fresh('items'), $pay);
         }
     }
