@@ -259,6 +259,12 @@ class PedidoController extends Controller
             'pending' => $frontendUrl . '/checkout/pendiente',
         ];
 
+        Log::info('URLs de redirección configuradas', [
+            'order_id' => $order->id,
+            'frontend_url' => $frontendUrl,
+            'back_urls' => $backUrls,
+        ]);
+
         $payload = [
             'items' => $order->items->map(fn (OrderItem $item) => [
                 'title' => $item->product_name,
@@ -276,16 +282,29 @@ class PedidoController extends Controller
             $payload['auto_return'] = 'approved';
         }
 
+        Log::info('Enviando preferencia a Mercado Pago', [
+            'order_id' => $order->id,
+            'payload' => $payload,
+        ]);
+
         $response = Http::withToken($accessToken)
             ->acceptJson()
             ->timeout(30)
             ->post('https://api.mercadopago.com/checkout/preferences', $payload);
 
         if ($response->successful()) {
-            return $response->json();
+            $preferenceData = $response->json();
+            Log::info('✅ Preferencia creada exitosamente en Mercado Pago', [
+                'order_id' => $order->id,
+                'preference_id' => $preferenceData['id'] ?? null,
+                'init_point' => $preferenceData['init_point'] ?? null,
+                'sandbox_init_point' => $preferenceData['sandbox_init_point'] ?? null,
+                'back_urls' => $preferenceData['back_urls'] ?? null,
+            ]);
+            return $preferenceData;
         }
 
-        Log::error('Mercado Pago rechazó la preferencia', [
+        Log::error('❌ Mercado Pago rechazó la preferencia', [
             'order_id' => $order->id,
             'status' => $response->status(),
             'response' => $response->json(),
