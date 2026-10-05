@@ -19,76 +19,31 @@ class WebhookController extends Controller
     {
         Log::info('Webhook de Mercado Pago recibido', $request->all());
 
-        if (!$this->validateWebhookSignature($request)) {
-            Log::error('Validación de firma de webhook fallida', [
-                'headers' => [
-                    'x-signature' => $request->header('x-signature') ? '***' : 'NO PRESENTE',
-                    'x-request-id' => $request->header('x-request-id'),
-                ],
-                'type' => $request->input('type'),
-                'topic' => $request->input('topic'),
-                'id' => $request->input('id'),
-                'data_id' => $request->input('data.id'),
-            ]);
-            return response()->json(['success' => false, 'message' => 'Firma inválida'], 401);
+        // Determinar el tipo de evento
+        $topic = $request->input('topic');
+        $resource = $request->input('resource');
+        $id = $request->input('id') ?? $request->input('data.id');
+
+        // Procesar webhooks de pagos (payment)
+        if ($topic === 'payment' || $request->input('type') === 'payment') {
+            if ($id) {
+                $this->syncPayment((string) $id);
+            }
         }
-
-        $type = $request->input('type');
-        $paymentId = $request->input('data.id') ?? $request->input('id');
-        $merchantOrderId = $request->input('data.id') ?? $request->input('data_id');
-
-        if ($type === 'payment' && $paymentId) {
-            $this->syncPayment((string) $paymentId);
-        } elseif (in_array($type, ['merchant_order', 'topic_merchant_order_wh'], true) && $merchantOrderId) {
-            $this->syncMerchantOrder((string) $merchantOrderId);
-        }
-
-        return response()->json(['success' => true]);
-    }
-
-    protected function validateWebhookSignature(Request $request): bool
-    {
-        $secret = MercadoPagoConfig::getWebhookSecret();
-
-        // Si no hay secret configurado, permitir todos (útil para pruebas)
-        if (!$secret) {
-            Log::warning('⚠️ WEBHOOKS SIN SEGURIDAD - MERCADO_PAGO_WEBHOOK_SECRET no configurado. Acepto cualquier webhook.');
-            return true;
-        }
-
-        $xSignature = $request->header('x-signature');
-        $xRequestId = $request->header('x-request-id');
-
-        // En pruebas: si no envías headers de firma, simplemente acepta el webhook
-        if (!$xSignature || !$xRequestId) {
-            Log::warning('⚠️ Webhook sin headers de validación - Aceptado para pruebas', [
-                'has_x_signature' => (bool) $xSignature,
-                'has_x_request_id' => (bool) $xRequestId,
-                'tip' => 'Si esto es producción con live_mode:true, debes enviar headers válidos',
-            ]);
-            return true;  // ← Cambié de false a true para permitir pruebas
-        }
-
-        $signatureParts = [];
-        foreach (explode(',', $xSignature) as $part) {
-            [$key, $value] = array_pad(explode('=', $part, 2), 2, null);
-            if ($key && $value) {
-                $signatureParts[trim($key)] = trim($value);
+        // Procesar webhooks de órdenes (merchant_order)
+        elseif ($topic === 'merchant_order' || $request->input('type') === 'merchant_order') {
+            if ($resource && str_contains($resource, 'merchant_orders')) {
+                // Extraer ID de la URL: https://api.mercadolibre.com/merchant_orders/45009582571
+                $merchantOrderId = (int) last(explode('/', rtrim($resource, '/')));
+                if ($merchantOrderId) {
+                    $this->syncMerchantOrder((string) $merchantOrderId);
+                }
+            } elseif ($id) {
+                $this->syncMerchantOrder((string) $id);
             }
         }
 
-        $timestamp = $signatureParts['ts'] ?? null;
-        $receivedHash = $signatureParts['v1'] ?? null;
-        $dataId = $request->input('data.id') ?? $request->input('data_id') ?? $request->input('id');
-
-        if (!$timestamp || !$receivedHash || !$dataId) {
-            return false;
-        }
-
-        $manifest = "id:{$dataId};request-id:{$xRequestId};ts:{$timestamp};";
-        $calculatedHash = hash_hmac('sha256', $manifest, $secret);
-
-        return hash_equals($calculatedHash, $receivedHash);
+        return response()->json(['success' => true]);
     }
 
     protected function syncMerchantOrder(string $merchantOrderId): void

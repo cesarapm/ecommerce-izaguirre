@@ -31,7 +31,6 @@ class MercadoPagoSettings extends Page implements Forms\Contracts\HasForms
         $this->form->fill([
             'access_token' => Setting::get('mercadopago_access_token', ''),
             'notification_url' => Setting::get('mercadopago_notification_url', ''),
-            'webhook_secret' => Setting::get('mercadopago_webhook_secret', ''),
         ]);
     }
 
@@ -58,14 +57,6 @@ class MercadoPagoSettings extends Page implements Forms\Contracts\HasForms
                             ->required()
                             ->maxLength(500)
                             ->columnSpanFull(),
-
-                        Forms\Components\TextInput::make('webhook_secret')
-                            ->label('Webhook Secret')
-                            ->helperText('Secreto para validar las firmas de los webhooks')
-                            ->placeholder('7c9b512de072ed10...')
-                            ->required()
-                            ->maxLength(255)
-                            ->columnSpanFull(),
                     ])
                     ->columns(1),
 
@@ -85,7 +76,6 @@ class MercadoPagoSettings extends Page implements Forms\Contracts\HasForms
 
         Setting::set('mercadopago_access_token', $data['access_token'], 'Access Token de Mercado Pago');
         Setting::set('mercadopago_notification_url', $data['notification_url'], 'URL de notificación de Mercado Pago');
-        Setting::set('mercadopago_webhook_secret', $data['webhook_secret'], 'Secreto del webhook de Mercado Pago');
 
         // Limpiar cache de configuración
         \Illuminate\Support\Facades\Artisan::call('config:clear');
