@@ -455,27 +455,38 @@ const buildTransferWhatsAppUrl = (order) => {
   return `https://wa.me/${transferWhatsAppNumber}?text=${encodeURIComponent(message)}`;
 };
 
-const buildOrderPayload = () => ({
-  customer_first_name: form.value.firstName,
-  customer_last_name: form.value.lastName,
-  customer_email: form.value.email,
-  customer_phone: form.value.phone,
-  shipping_address: form.value.address,
-  shipping_city: form.value.city,
-  shipping_state: form.value.state,
-  shipping_zip_code: form.value.zipCode,
-  subtotal: subtotal.value,
-  shipping_cost: shippingCost.value,
-  total: total.value,
-  notes: form.value.notes,
-  save_customer_profile: form.value.saveCustomerProfile,
-  items: cartItems.value.map(item => ({
-    product_id: item.id,
-    product_name: item.name,
-    quantity: item.quantity,
-    unit_price: item.price
-  }))
-});
+const buildOrderPayload = () => {
+  const payload = {
+    customer_first_name: form.value.firstName,
+    customer_last_name: form.value.lastName,
+    customer_email: form.value.email,
+    customer_phone: form.value.phone,
+    shipping_address: form.value.address,
+    shipping_city: form.value.city,
+    shipping_state: form.value.state,
+    shipping_zip_code: form.value.zipCode,
+    subtotal: subtotal.value,
+    shipping_cost: shippingCost.value,
+    total: total.value,
+    notes: form.value.notes,
+    save_customer_profile: form.value.saveCustomerProfile,
+    items: cartItems.value.map(item => ({
+      product_id: item.id,
+      product_name: item.name,
+      quantity: item.quantity,
+      unit_price: item.price
+    }))
+  };
+
+  console.log('📦 Payload enviado al backend:', {
+    subtotal: payload.subtotal,
+    shipping_cost: payload.shipping_cost,
+    total: payload.total,
+    calculated_total: payload.subtotal + payload.shipping_cost
+  });
+
+  return payload;
+};
 
 const submitOrder = async () => {
   // Validar formulario

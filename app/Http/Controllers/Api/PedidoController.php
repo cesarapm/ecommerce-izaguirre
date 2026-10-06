@@ -184,6 +184,17 @@ class PedidoController extends Controller
             $shippingCost = (float) $validated['shipping_cost'];
             $tax = 0;
             $calculatedTotal = $calculatedSubtotal + $shippingCost + $tax;
+
+            Log::info('💾 Guardando orden - Cálculos totales', [
+                'validated_subtotal' => $validated['subtotal'] ?? null,
+                'validated_shipping_cost' => $validated['shipping_cost'] ?? null,
+                'validated_total' => $validated['total'] ?? null,
+                'calculated_subtotal' => $calculatedSubtotal,
+                'calculated_shipping_cost' => $shippingCost,
+                'calculated_total' => $calculatedTotal,
+                'item_count' => count($validated['items']),
+            ]);
+
             $customer = null;
 
             if (!empty($validated['save_customer_profile'])) {
