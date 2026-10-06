@@ -277,12 +277,21 @@ class PedidoController extends Controller
         ]);
 
         $payload = [
-            'items' => $order->items->map(fn (OrderItem $item) => [
-                'title' => $item->product_name,
-                'quantity' => (int) $item->quantity,
-                'unit_price' => (float) $item->unit_price,
-                'currency_id' => 'MXN',
-            ])->values()->all(),
+            'items' => array_merge(
+                $order->items->map(fn (OrderItem $item) => [
+                    'title' => $item->product_name,
+                    'quantity' => (int) $item->quantity,
+                    'unit_price' => (float) $item->unit_price,
+                    'currency_id' => 'MXN',
+                ])->values()->all(),
+                // Agregar envío como item separado si es > 0
+                $order->shipping_cost > 0 ? [[
+                    'title' => 'Envío',
+                    'quantity' => 1,
+                    'unit_price' => (float) $order->shipping_cost,
+                    'currency_id' => 'MXN',
+                ]] : []
+            ),
             'external_reference' => (string) $order->id,
             'notification_url' => $notificationUrl,
             'back_urls' => $backUrls,
