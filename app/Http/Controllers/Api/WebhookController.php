@@ -22,7 +22,8 @@ class WebhookController extends Controller
         // Determinar el tipo de evento
         $topic = $request->input('topic');
         $resource = $request->input('resource');
-        $id = $request->input('id') ?? $request->input('data.id');
+        // Priorizar data.id sobre id (data.id es el payment ID real)
+        $id = $request->input('data.id') ?? $request->input('id');
 
         // Procesar webhooks de pagos (payment)
         if ($topic === 'payment' || $request->input('type') === 'payment') {
